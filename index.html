@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quản lí tài chính</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{--bg:#f5f6fa;--card:#fff;--text:#1f2430;--muted:#7a8194;--in:#16a34a;--out:#dc2626;--warn:#f59e0b;--pri:#2563eb;--bd:#e3e6ee}
+@media (prefers-color-scheme:dark){:root{--bg:#14161c;--card:#1d2029;--text:#e8eaf0;--muted:#8f96a8;--bd:#2c303c}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;max-width:720px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--bd)}
+header b{font-size:17px}
+.mnav{display:flex;align-items:center;gap:6px}
+.mnav span{min-width:76px;text-align:center;font-weight:600}
+main{flex:1;overflow-y:auto;padding:12px 12px 90px}
+.tab{display:none}.tab.show{display:block}
+nav{display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0)}
+nav button{flex:1;background:none;color:var(--muted);border:0;padding:8px 2px;font-size:11px;border-radius:0}
+nav button span{display:block;font-size:20px}
+nav button.on{color:var(--pri);font-weight:700}
+.fab{position:fixed;right:max(16px,calc(50% - 344px));bottom:calc(72px + env(safe-area-inset-bottom,0));width:56px;height:56px;border-radius:50%;font-size:30px;padding:0;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:5}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.row>*{flex:1;min-width:100px}
+input,button{font:inherit;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--text)}
+button{background:var(--pri);color:#fff;border:0;cursor:pointer}
+button.sec{background:var(--bd);color:var(--text)}
+.chip{background:var(--bd);color:var(--text);padding:8px 12px;border-radius:20px;flex:none;min-width:0;font-size:14px}
+.chip.on{background:var(--pri);color:#fff}
+.chip.in.on{background:var(--in)}.chip.out.on{background:var(--out)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center}
+.sum small{display:block}
+.sum b{font-size:15px}
+.in{color:var(--in)}.out{color:var(--out)}
+small{color:var(--muted)}
+.item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd)}
+.item:last-child{border:0}
+.del{background:none;color:var(--muted);padding:4px 8px;flex:none;min-width:0}
+.bar{height:8px;background:var(--bd);border-radius:4px;overflow:hidden;margin:3px 0 8px}
+.bar i{display:block;height:100%}
+.over{color:var(--out);font-weight:600}
+.chart{display:flex;align-items:flex-end;gap:6px;height:100px;margin-top:8px}
+.col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}
+.pair{display:flex;align-items:flex-end;gap:2px;width:100%;flex:1}
+.pair i{flex:1;border-radius:3px 3px 0 0;min-height:1px}
+.col small{font-size:11px;margin-top:3px}
+.goal{padding:8px 0;border-bottom:1px solid var(--bd)}
+.goal:last-child{border:0}
+.fc{font-size:13px;color:var(--pri);margin-bottom:4px}
+.bud{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.bud span{width:80px}
+.bud input{flex:1;min-width:0}
+.head{display:flex;justify-content:space-between;align-items:center}
+.head button{padding:7px 14px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;z-index:10}
+.modal.show{display:flex}
+.sheet{background:var(--card);width:100%;max-width:720px;margin:0 auto;border-radius:18px 18px 0 0;padding:16px;max-height:92%;overflow-y:auto;padding-bottom:calc(16px + env(safe-area-inset-bottom,0))}
+.sheet h3{margin:0 0 4px}
+.sheet label{display:block;font-size:13px;color:var(--muted);margin-top:10px}
+.sheet input{width:100%;margin-top:4px}
+.sheet .big{font-size:22px;font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <b>💰 Tài chính / Финансы</b>
+  <div class="mnav"><button class="sec" id="prev">◀</button><span id="mLabel"></span><button class="sec" id="next">▶</button></div>
+</header>
+
+<main>
+  <!-- Tổng quan -->
+  <section class="tab show" id="t-home">
+    <div class="card sum">
+      <div><small>Thu / Доход</small><b class="in" id="sIn">0</b></div>
+      <div><small>Chi / Расход</small><b class="out" id="sOut">0</b></div>
+      <div><small>Còn / Остаток</small><b id="sBal">0</b></div>
+    </div>
+    <div class="card"><b>6 tháng / 6 месяцев</b> <small>(<span class="in">■ Thu</span> <span class="out">■ Chi</span>)</small><div class="chart" id="chart"></div></div>
+    <div class="card"><b>Chi theo danh mục / По категориям</b><div id="cats" style="margin-top:8px"></div></div>
+  </section>
+
+  <!-- Giao dịch -->
+  <section class="tab" id="t-list">
+    <div class="card"><b>Giao dịch / Операции</b><div id="list"></div></div>
+  </section>
+
+  <!-- Mục tiêu -->
+  <section class="tab" id="t-goals">
+    <div class="card">
+      <div class="head"><b>🎯 Mục tiêu / Цели</b><button onclick="openM('mGoal')">+ Tạo</button></div>
+      <div id="goals"></div>
+    </div>
+  </section>
+
+  <!-- Định kỳ -->
+  <section class="tab" id="t-rec">
+    <div class="card">
+      <div class="head"><b>🔁 Định kỳ / Регулярные</b><button onclick="openM('mRec')">+ Tạo</button></div>
+      <div id="recs"></div>
+    </div>
+  </section>
+
+  <!-- Cài đặt -->
+  <section class="tab" id="t-set">
+    <div class="card">
+      <b>💱 Tỷ giá / Курс</b>
+      <div class="bud" style="margin-top:8px"><span style="width:auto">1 ₽ =</span><input type="number" min="0" id="rate"><span style="width:auto">VND</span></div>
+      <small>Chỉ áp dụng cho giao dịch mới. / Только для новых операций.</small>
+    </div>
+    <div class="card">
+      <b>📏 Ngân sách tháng / Лимиты (VND)</b>
+      <div id="budgets" style="margin-top:8px"></div>
+      <small>Để trống hoặc 0 = không giới hạn.</small>
+    </div>
+    <div class="card">
+      <b>💾 Sao lưu / Резервная копия</b>
+      <div class="row">
+        <button id="exp">Xuất / Экспорт</button>
+        <button class="sec" id="impBtn">Nhập / Импорт</button>
+        <input type="file" id="imp" accept=".json" hidden>
+      </div>
+    </div>
+  </section>
+</main>
+
+<button class="fab" onclick="openM('mAdd')">+</button>
+
+<nav>
+  <button class="on" data-tab="home"><span>🏠</span>Tổng quan</button>
+  <button data-tab="list"><span>📋</span>Giao dịch</button>
+  <button data-tab="goals"><span>🎯</span>Mục tiêu</button>
+  <button data-tab="rec"><span>🔁</span>Định kỳ</button>
+  <button data-tab="set"><span>⚙️</span>Cài đặt</button>
+</nav>
+
+<!-- Modal: thêm giao dịch -->
+<div class="modal" id="mAdd"><div class="sheet">
+  <h3>Thêm giao dịch / Новая операция</h3>
+  <div class="chips" id="sAddType"></div>
+  <label>Số tiền / Сумма</label>
+  <input id="amount" type="number" min="0" inputmode="decimal" class="big" placeholder="0">
+  <div class="chips" id="sAddCur"></div>
+  <label>Danh mục / Категория</label>
+  <div class="chips" id="sAddCat"></div>
+  <label>Ngày / Дата</label><input id="date" type="date">
+  <label>Ghi chú / Заметка</label><input id="note" placeholder="(không bắt buộc)">
+  <div class="row"><button class="sec" onclick="closeM()">Hủy</button><button id="add">Lưu / Сохранить</button></div>
+</div></div>
+
+<!-- Modal: mục tiêu -->
+<div class="modal" id="mGoal"><div class="sheet">
+  <h3>Mục tiêu mới / Новая цель</h3>
+  <label>Tên / Название</label><input id="gName" placeholder="Ví dụ: Mua laptop">
+  <label>Số tiền cần (VND) / Нужная сумма</label><input id="gTarget" type="number" min="0" inputmode="decimal">
+  <div class="row"><button class="sec" onclick="closeM()">Hủy</button><button id="gAdd">Tạo / Создать</button></div>
+</div></div>
+
+<!-- Modal: định kỳ -->
+<div class="modal" id="mRec"><div class="sheet">
+  <h3>Giao dịch định kỳ / Регулярный платёж</h3>
+  <div class="chips" id="sRType"></div>
+  <label>Số tiền / Сумма</label>
+  <input id="rAmount" type="number" min="0" inputmode="decimal" class="big" placeholder="0">
+  <div class="chips" id="sRCur"></div>
+  <label>Danh mục / Категория</label>
+  <div class="chips" id="sRCat"></div>
+  <label>Ngày mỗi tháng (1-28) / День месяца</label><input id="rDay" type="number" min="1" max="28" inputmode="numeric">
+  <label>Ghi chú / Заметка</label><input id="rNote" placeholder="(không bắt buộc)">
+  <div class="row"><button class="sec" onclick="closeM()">Hủy</button><button id="rAdd">Tạo / Создать</button></div>
+</div></div>
+
+<script>
+const KEY = 'finance_tx_v1', BKEY = 'finance_budget_v1', GKEY = 'finance_goals_v1', RKEY = 'finance_rec_v1', SKEY = 'finance_settings_v1';
+const CATS = ['Ăn uống', 'Đi lại', 'Học tập', 'Nhà ở', 'Giải trí', 'Khác'];
+const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } };
+let tx = load(KEY, []), budget = load(BKEY, {}), goals = load(GKEY, []), recs = load(RKEY, []), settings = load(SKEY, { rate: 340 });
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString('vi-VN');
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const today = new Date().toISOString().slice(0, 10);
+const curMonth = today.slice(0, 7);
+let sel = curMonth;
+$('rate').value = settings.rate;
+
+const toVND = (a, cur) => cur === 'RUB' ? a * settings.rate : a;
+const shiftMonth = (m, k) => { const [y, mo] = m.split('-').map(Number); const d = new Date(y, mo - 1 + k, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
+
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(tx));
+    localStorage.setItem(BKEY, JSON.stringify(budget));
+    localStorage.setItem(GKEY, JSON.stringify(goals));
+    localStorage.setItem(RKEY, JSON.stringify(recs));
+    localStorage.setItem(SKEY, JSON.stringify(settings));
+  } catch (e) {}
+}
+
+// ---- Tabs & modals ----
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('show', t.id === 't-' + b.dataset.tab));
+  $('t-' + b.dataset.tab).parentElement.scrollTop = 0;
+});
+function openM(id) { $(id).classList.add('show'); }
+function closeM() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('show')); }
+document.querySelectorAll('.modal').forEach(m => m.onclick = e => { if (e.target === m) closeM(); });
+
+// ---- Nút chọn (chips) ----
+const S = { addType: 'out', addCur: 'VND', addCat: CATS[0], rType: 'out', rCur: 'VND', rCat: CATS[0] };
+const OPT = {
+  addType: [['out', 'Chi / Расход'], ['in', 'Thu / Доход']], rType: [['out', 'Chi / Расход'], ['in', 'Thu / Доход']],
+  addCur: [['VND', 'VND'], ['RUB', 'RUB ₽']], rCur: [['VND', 'VND'], ['RUB', 'RUB ₽']],
+  addCat: CATS.map(c => [c, c]), rCat: CATS.map(c => [c, c])
+};
+const SEG = { sAddType: 'addType', sAddCur: 'addCur', sAddCat: 'addCat', sRType: 'rType', sRCur: 'rCur', sRCat: 'rCat' };
+function drawSeg(id) {
+  const key = SEG[id], isType = key.endsWith('Type');
+  $(id).innerHTML = OPT[key].map(([v, l]) =>
+    `<button class="chip ${isType ? v : ''} ${S[key] === v ? 'on' : ''}" data-v="${v}">${l}</button>`).join('');
+  $(id).querySelectorAll('button').forEach(b => b.onclick = () => { S[key] = b.dataset.v; drawSeg(id); });
+}
+Object.keys(SEG).forEach(drawSeg);
+
+// ---- Ngân sách ----
+function buildBudgets() {
+  $('budgets').innerHTML = CATS.map((c, i) =>
+    `<div class="bud"><span>${c}</span><input type="number" min="0" id="b${i}" placeholder="Giới hạn" value="${budget[c] || ''}"></div>`).join('');
+  CATS.forEach((c, i) => $('b' + i).oninput = e => {
+    const v = parseFloat(e.target.value);
+    if (v > 0) budget[c] = v; else delete budget[c];
+    save(); render();
+  });
+}
+buildBudgets();
+$('rate').oninput = e => { const v = parseFloat(e.target.value); if (v > 0) { settings.rate = v; save(); } };
+
+// ---- Định kỳ ----
+function applyRecurring() {
+  let changed = false;
+  recs.forEach(r => {
+    let m = r.start;
+    while (m <= curMonth) {
+      const d = m + '-' + String(r.day).padStart(2, '0');
+      if (d <= today && !tx.some(t => t.recId === r.id && t.date.startsWith(m))) {
+        const t = { id: Date.now() + Math.random(), recId: r.id, type: r.type, amount: toVND(r.amount, r.cur), cat: r.cat, date: d, note: r.note };
+        if (r.cur === 'RUB') { t.cur = 'RUB'; t.orig = r.amount; }
+        tx.push(t); changed = true;
+      }
+      m = shiftMonth(m, 1);
+    }
+  });
+  if (changed) save();
+}
+$('rAdd').onclick = () => {
+  const amount = parseFloat($('rAmount').value), day = parseInt($('rDay').value);
+  if (!amount || amount <= 0 || !day || day < 1 || day > 28) return;
+  recs.push({ id: Date.now(), type: S.rType, amount, cur: S.rCur, cat: S.rCat, day, note: $('rNote').value.trim(), start: curMonth });
+  $('rAmount').value = ''; $('rDay').value = ''; $('rNote').value = '';
+  applyRecurring(); save(); closeM(); render();
+};
+function delRec(id) { recs = recs.filter(r => r.id !== id); save(); render(); }
+function renderRecs() {
+  $('recs').innerHTML = recs.map(r => `
+    <div class="item">
+      <div>${r.cat}${r.note ? ' · ' + esc(r.note) : ''}<br><small>Ngày ${r.day} hằng tháng / ${r.day}-го числа</small></div>
+      <div><b class="${r.type}">${r.type === 'in' ? '+' : '−'}${fmt(r.amount)}${r.cur === 'RUB' ? ' ₽' : ''}</b>
+      <button class="del" onclick="delRec(${r.id})">✕</button></div>
+    </div>`).join('') || '<small>Chưa có. Bấm "+ Tạo". / Пока пусто.</small>';
+}
+
+// ---- Biểu đồ ----
+function renderChart() {
+  const data = [];
+  for (let i = 5; i >= 0; i--) {
+    const m = shiftMonth(sel, -i);
+    data.push({
+      m,
+      i: tx.filter(t => t.type === 'in' && t.date.startsWith(m)).reduce((s, t) => s + t.amount, 0),
+      o: tx.filter(t => t.type === 'out' && t.date.startsWith(m)).reduce((s, t) => s + t.amount, 0)
+    });
+  }
+  const max = Math.max(1, ...data.map(d => Math.max(d.i, d.o)));
+  $('chart').innerHTML = data.map(d => `
+    <div class="col">
+      <div class="pair">
+        <i style="height:${d.i / max * 100}%;background:var(--in)"></i>
+        <i style="height:${d.o / max * 100}%;background:var(--out)"></i>
+      </div>
+      <small>${d.m.slice(5)}/${d.m.slice(2, 4)}</small>
+    </div>`).join('');
+}
+
+// ---- Mục tiêu & dự báo ----
+function avgSavings() {
+  const vals = [];
+  for (let i = 1; i <= 3; i++) {
+    const list = tx.filter(t => t.date.startsWith(shiftMonth(curMonth, -i)));
+    if (list.length) vals.push(list.reduce((s, t) => s + (t.type === 'in' ? t.amount : -t.amount), 0));
+  }
+  if (!vals.length) {
+    const list = tx.filter(t => t.date.startsWith(curMonth));
+    if (list.length) vals.push(list.reduce((s, t) => s + (t.type === 'in' ? t.amount : -t.amount), 0));
+  }
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+}
+function forecast(g, avg) {
+  const left = g.target - g.saved;
+  if (left <= 0) return '🎉 Đã đạt mục tiêu! / Цель достигнута!';
+  if (avg === null) return 'Chưa đủ dữ liệu để dự báo. / Недостаточно данных.';
+  if (avg <= 0) return 'Chưa có tiền dư để dự báo. / Нет накоплений для прогноза.';
+  const n = Math.ceil(left / avg);
+  const m = shiftMonth(curMonth, n);
+  return `📈 ~${n} tháng (${m.slice(5)}/${m.slice(0, 4)}), dư ~${fmt(avg)}/tháng. / ~${n} мес.`;
+}
+function renderGoals() {
+  const avg = avgSavings();
+  $('goals').innerHTML = goals.map(g => {
+    const pct = Math.min(100, g.saved / g.target * 100);
+    return `<div class="goal">
+      <div><b>${esc(g.name)}</b> — ${fmt(g.saved)} / ${fmt(g.target)} <small>(${Math.round(pct)}%)</small>
+      <button class="del" onclick="delGoal(${g.id})">✕</button></div>
+      <div class="bar"><i style="width:${pct}%;background:var(--pri)"></i></div>
+      <div class="fc">${forecast(g, avg)}</div>
+      <div class="row" style="margin-top:0"><input type="number" min="0" inputmode="decimal" placeholder="Góp thêm" id="g${g.id}"><button onclick="contrib(${g.id})">+ Góp</button></div>
+    </div>`;
+  }).join('') || '<small>Chưa có. Bấm "+ Tạo". / Пока пусто.</small>';
+}
+function contrib(id) {
+  const v = parseFloat($('g' + id).value);
+  if (!v || v <= 0) return;
+  goals.find(g => g.id === id).saved += v;
+  save(); renderGoals();
+}
+function delGoal(id) { goals = goals.filter(g => g.id !== id); save(); renderGoals(); }
+$('gAdd').onclick = () => {
+  const name = $('gName').value.trim(), target = parseFloat($('gTarget').value);
+  if (!name || !target || target <= 0) return;
+  goals.push({ id: Date.now(), name, target, saved: 0 });
+  $('gName').value = ''; $('gTarget').value = '';
+  save(); closeM(); renderGoals();
+};
+
+// ---- Render chính ----
+function render() {
+  $('mLabel').textContent = sel.slice(5) + '/' + sel.slice(0, 4);
+  const cur = tx.filter(t => t.date.startsWith(sel)).sort((a, b) => b.date.localeCompare(a.date));
+  const sIn = cur.filter(t => t.type === 'in').reduce((s, t) => s + t.amount, 0);
+  const sOut = cur.filter(t => t.type === 'out').reduce((s, t) => s + t.amount, 0);
+  $('sIn').textContent = fmt(sIn);
+  $('sOut').textContent = fmt(sOut);
+  $('sBal').textContent = fmt(sIn - sOut);
+  $('sBal').className = sIn - sOut >= 0 ? 'in' : 'out';
+
+  const spent = {};
+  cur.filter(t => t.type === 'out').forEach(t => spent[t.cat] = (spent[t.cat] || 0) + t.amount);
+  const rows = CATS.filter(c => spent[c] || budget[c]).map(c => {
+    const v = spent[c] || 0, lim = budget[c];
+    let pct, color = 'var(--out)', label = fmt(v);
+    if (lim) {
+      pct = v / lim * 100;
+      color = pct > 100 ? 'var(--out)' : pct >= 80 ? 'var(--warn)' : 'var(--in)';
+      label = `${fmt(v)} / ${fmt(lim)}` + (pct > 100 ? ` <span class="over">⚠ vượt ${fmt(v - lim)}</span>` : ` <small>(còn ${fmt(lim - v)})</small>`);
+    } else {
+      pct = sOut ? v / sOut * 100 : 0;
+    }
+    return `<div>${c} — ${label}</div><div class="bar"><i style="width:${Math.min(pct, 100)}%;background:${color}"></i></div>`;
+  });
+  $('cats').innerHTML = rows.join('') || '<small>Chưa có khoản chi. / Расходов нет.</small>';
+
+  $('list').innerHTML = cur.map(t => `
+    <div class="item">
+      <div>${t.cat}${t.recId ? ' 🔁' : ''}<br><small>${t.date}${t.note ? ' · ' + esc(t.note) : ''}</small></div>
+      <div><b class="${t.type}">${t.type === 'in' ? '+' : '−'}${fmt(t.amount)}</b>${t.cur === 'RUB' ? ` <small>(${fmt(t.orig)} ₽)</small>` : ''}
+      <button class="del" onclick="del(${t.id})">✕</button></div>
+    </div>`).join('') || '<small>Chưa có giao dịch. Bấm nút + ở góc phải. / Нажмите + справа.</small>';
+
+  renderChart(); renderGoals(); renderRecs();
+}
+function del(id) { tx = tx.filter(t => t.id !== id); save(); render(); }
+
+$('prev').onclick = () => { sel = shiftMonth(sel, -1); render(); };
+$('next').onclick = () => { sel = shiftMonth(sel, 1); render(); };
+
+// ---- Thêm giao dịch ----
+$('date').value = today;
+$('add').onclick = () => {
+  const raw = parseFloat($('amount').value);
+  if (!raw || raw <= 0) return;
+  const date = $('date').value || today;
+  const t = { id: Date.now(), type: S.addType, amount: toVND(raw, S.addCur), cat: S.addCat, date, note: $('note').value.trim() };
+  if (S.addCur === 'RUB') { t.cur = 'RUB'; t.orig = raw; }
+  tx.push(t);
+  $('amount').value = ''; $('note').value = '';
+  sel = date.slice(0, 7);
+  save(); closeM(); render();
+  if (t.type === 'out' && budget[t.cat]) {
+    const total = tx.filter(x => x.type === 'out' && x.cat === t.cat && x.date.startsWith(sel)).reduce((s, x) => s + x.amount, 0);
+    if (total > budget[t.cat]) alert(`⚠ "${t.cat}" đã vượt ngân sách!\nКатегория «${t.cat}» превысила лимит!`);
+  }
+};
+
+// ---- Sao lưu ----
+$('exp').onclick = async () => {
+  const json = JSON.stringify({ tx, budget, goals, recs, settings }, null, 2);
+  try {
+    if (window.claude && window.claude.use) {
+      const dl = await window.claude.use('downloads');
+      if (dl) { await dl.save({ filename: 'tai-chinh-' + today + '.json', data: json }); return; }
+    }
+  } catch (err) { return; }
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tai-chinh-' + today + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+$('impBtn').onclick = () => $('imp').click();
+$('imp').onchange = e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!Array.isArray(d.tx)) throw 0;
+      if (!confirm('Ghi đè dữ liệu hiện tại? / Заменить текущие данные?')) return;
+      tx = d.tx; budget = d.budget || {}; goals = d.goals || []; recs = d.recs || []; settings = d.settings || { rate: 340 };
+      $('rate').value = settings.rate;
+      save(); buildBudgets(); render();
+    } catch (err) { alert('File không hợp lệ / Неверный файл'); }
+  };
+  r.readAsText(f);
+  e.target.value = '';
+};
+
+applyRecurring();
+render();
+
+// PWA: chạy offline / работа офлайн
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
